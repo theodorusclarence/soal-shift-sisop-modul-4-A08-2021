@@ -81,7 +81,6 @@ static int xmp_getattr(const char *path, struct stat *stbuf) {
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = true;
     }
-    printf("token: %s\n", token);
     token = strtok(NULL, "/");
   }
 
@@ -174,21 +173,49 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
                     struct fuse_file_info *fi) {
   char fpath[1000];
-  if (strcmp(path, "/") == 0) {
-    path = dirpath;
+  char temp[1000];
+  strcpy(temp, path);
 
-    sprintf(fpath, "%s", path);
-  } else
-    sprintf(fpath, "%s%s", dirpath, path);
+  sprintf(fpath, "%s%s", dirpath, path);
 
-  printf("\n🚀 READ\n");
+  bool hasToEncrypt = false;
+
+  // ? Current Path -> directory sekarang
+  // ? pathEnc -> path yang harus didecrypt biar bisa dibaca sama si attr
+  char currPath[1000] = "", pathEnc[1000] = "";
+
+  char *token = strtok(temp, "/");
+  while (token != NULL) {
+    if (hasToEncrypt) {
+      strcat(pathEnc, "/");
+      strcat(pathEnc, token);
+    } else if (!hasToEncrypt) {
+      strcat(currPath, "/");
+      strcat(currPath, token);
+    }
+
+    // TODO Check if prefixed with atoz_
+    if (strncmp(token, "AtoZ_", 5) == 0) {
+      hasToEncrypt = true;
+    }
+    token = strtok(NULL, "/");
+  }
+
+  // TODO Send decrypted path, jadi ga bingung si attrnya
+  char fpathToSend[2000], decrypted[1000];
+  if (hasToEncrypt) {
+    atbash(pathEnc, decrypted);
+    sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
+  } else {
+    sprintf(fpathToSend, "%s%s%s", dirpath, currPath, pathEnc);
+  }
 
   int res = 0;
   int fd = 0;
 
   (void)fi;
 
-  fd = open(fpath, O_RDONLY);
+  fd = open(fpathToSend, O_RDONLY);
 
   if (fd == -1) return -errno;
 
