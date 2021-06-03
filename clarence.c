@@ -228,10 +228,75 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
   return res;
 }
 
+static int xmp_rename(const char *from, const char *to) {
+  char fpathFrom[1000];
+  char fpathTo[1000];
+
+  if (strcmp(from, "/") == 0) {
+    from = dirpath;
+    sprintf(fpathFrom, "%s", from);
+  } else {
+    sprintf(fpathFrom, "%s%s", dirpath, from);
+  }
+
+  if (strcmp(to, "/") == 0) {
+    to = dirpath;
+    sprintf(fpathTo, "%s", to);
+  } else {
+    sprintf(fpathTo, "%s%s", dirpath, to);
+  }
+
+  int res;
+
+  res = rename(fpathFrom, fpathTo);
+  if (res == -1) return -errno;
+
+  return 0;
+}
+
+static int xmp_mkdir(const char *path, mode_t mode) {
+  char fpath[1000];
+  if (strcmp(path, "/") == 0) {
+    path = dirpath;
+    sprintf(fpath, "%s", path);
+  } else {
+    sprintf(fpath, "%s%s", dirpath, path);
+  }
+  int res;
+  res = mkdir(fpath, mode);
+
+  if (res == -1) return -errno;
+
+  return 0;
+}
+
+static int xmp_create(const char *path, mode_t mode,
+                      struct fuse_file_info *fi) {
+  char fpath[1000];
+  if (strcmp(path, "/") == 0) {
+    path = dirpath;
+    sprintf(fpath, "%s", path);
+  } else {
+    sprintf(fpath, "%s%s", dirpath, path);
+  }
+
+  (void)fi;
+
+  int res;
+  res = creat(fpath, mode);
+  if (res == -1) return -errno;
+
+  close(res);
+  return 0;
+}
+
 static struct fuse_operations xmp_oper = {
     .getattr = xmp_getattr,
     .readdir = xmp_readdir,
     .read = xmp_read,
+    .rename = xmp_rename,
+    .mkdir = xmp_mkdir,
+    .create = xmp_create,
 };
 
 int main(int argc, char *argv[]) {
