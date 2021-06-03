@@ -30,7 +30,6 @@ void loglvlInfo(const char *log, const char *path){
     fclose(fp);
 }
 
-// Membuat log dengan pesan Info tapi menerima dua path, source dan destination
 void loglvlInfo2(const char *log, const char *source, const char *destination){
     FILE *fp;
     fp = fopen("/home/yusuf/SinSeiFS.log", "a");
