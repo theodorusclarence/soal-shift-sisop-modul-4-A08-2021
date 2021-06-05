@@ -276,10 +276,10 @@ static int xmp_getattr(const char *path, struct stat *stbuf) {
 
   // TODO Send decrypted path, jadi ga bingung si attrnya
   char fpathToSend[2000], decrypted[1000], decrypted2[1000];
-  if (hasToEncrypt) {
+  if (hasToEncrypt == 1) {
     atbash(pathEnc, decrypted);
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
-  } else if () {
+  } else if (hasToEncrypt == 2) {
     rot13Denc(pathEnc, decrypted2);
     atbash(decrypted2, decrypted)
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
@@ -356,7 +356,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     } 
     else if (hasToEncrypt == 2) {
       atbash(de->d_name, temp2);
-      rot13Denc(temp2, temp);
+      rot13Enc(temp2, temp);
     }else {
       strcpy(temp, de->d_name);
     }
