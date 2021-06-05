@@ -318,7 +318,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     else if (strncmp(token, "RX_[Nama]", 9) == 0) {
       hasToEncrypt = 2;
     }
-    printf("token: %s\n", token);
+    // printf("token: %s\n", token);
     token = strtok(NULL, "/");
   }
 
