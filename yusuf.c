@@ -51,6 +51,56 @@ void atbash(char str[1000], char newStr[1000]) {
   newStr[i] = '\0';
 }
 
+void loglvlWarning(const char *log, const char *path){
+    FILE *fp;
+    fp = fopen("/home/yusuf/SinSeiFS.log", "a");
+    fputs("WARNING::", fp);
+    char timestamp[1000];
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(timestamp, "%02d%02d%02d-%02d:%02d:%02d:", (tm.tm_year + 1900)%100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fputs(timestamp, fp);
+    fputs(log, fp);
+    fputs("::", fp);
+    fputs(path, fp);
+    fputs("\n", fp);
+    fclose(fp);
+}
+
+void loglvlInfo(const char *log, const char *path){
+    FILE *fp;
+    fp = fopen("/home/yusuf/SinSeiFS.log", "a");
+    fputs("INFO::", fp);
+    char timestamp[1000];
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(timestamp, "%02d%02d%02d-%02d:%02d:%02d:", (tm.tm_year + 1900)%100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fputs(timestamp, fp);
+    fputs(log, fp);
+    fputs("::", fp);
+    fputs(path, fp);
+    fputs("\n", fp);
+    fclose(fp);
+}
+
+void loglvlInfo2(const char *log, const char *source, const char *destination){
+    FILE *fp;
+    fp = fopen("/home/yusuf/SinSeiFS.log", "a");
+    fputs("INFO::", fp);
+    char timestamp[1000];
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    sprintf(timestamp, "%02d%02d%02d-%02d:%02d:%02d:", (tm.tm_year + 1900)%100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    fputs(timestamp, fp);
+    fputs(log, fp);
+    fputs("::", fp);
+    fputs(source, fp);
+    fputs("::", fp);
+    fputs(destination, fp);
+    fputs("\n", fp);
+    fclose(fp);
+}
+
 static int xmp_getattr(const char *path, struct stat *stbuf) {
   int res;
   char fpath[1000];
@@ -290,6 +340,363 @@ static int xmp_create(const char *path, mode_t mode,
   return 0;
 }
 
+static int xmp_readlink(const char *path, char *buf, size_t size){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+    res = readlink(fpath, buf, size - 1);
+    if (res == -1)
+        return -errno;
+
+    buf[res] = '\0';
+
+    loglvlInfo("READLINK", path);
+    return 0;
+}
+
+static int xmp_mknod(const char *path, mode_t mode, dev_t rdev){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+	int res;
+
+	/* On Linux this could just be 'mknod(path, mode, rdev)' but this
+	   is more portable */
+	if (S_ISREG(mode)) {
+		res = open(fpath, O_CREAT | O_EXCL | O_WRONLY, mode);
+		if (res >= 0)
+			res = close(res);
+	} else if (S_ISFIFO(mode))
+		res = mkfifo(fpath, mode);
+	else
+		res = mknod(fpath, mode, rdev);
+	if (res == -1)
+		return -errno;
+
+    loglvlInfo("MKNOD", path);
+	return 0;
+}
+
+static int xmp_symlink(const char *from, const char *to){
+    char fpathFrom[1000];
+    char fpathTo[1000];
+    if(strcmp(from,"/") == 0){
+        from=dirpath;
+        sprintf(fpathFrom,"%s",from);
+    } else{
+        sprintf(fpathFrom, "%s%s",dirpath,from);
+    }
+
+    if(strcmp(to,"/") == 0){
+        to=dirpath;
+        sprintf(fpathTo,"%s",to);
+    } else{
+        sprintf(fpathTo, "%s%s",dirpath,to);
+    }
+
+    int res;
+
+    res = symlink(fpathFrom, fpathTo);
+    if (res == -1)
+        return -errno;
+
+    loglvlInfo2("SYMLINK", from, to);
+    return 0;
+}
+
+static int xmp_unlink(const char *path){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+
+    res = unlink(fpath);
+    if (res == -1)
+        return -errno;
+
+    loglvlWarning("UNLINK", path);
+    return 0;
+}
+
+static int xmp_rmdir(const char *path){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+
+    res = rmdir(fpath);
+    if (res == -1)
+        return -errno;
+
+    loglvlWarning("RMDIR", path);
+    return 0;
+}
+
+static int xmp_link(const char *from, const char *to){
+    char fpathFrom[1000];
+    char fpathTo[1000];
+    if(strcmp(from,"/") == 0){
+        from=dirpath;
+        sprintf(fpathFrom,"%s",from);
+    } else{
+        sprintf(fpathFrom, "%s%s",dirpath,from);
+    }
+
+    if(strcmp(to,"/") == 0){
+        to=dirpath;
+        sprintf(fpathTo,"%s",to);
+    } else{
+        sprintf(fpathTo, "%s%s",dirpath,to);
+    }
+
+    int res;
+
+    res = link(fpathFrom, fpathTo);
+    if (res == -1)
+        return -errno;
+
+    loglvlInfo2("LINK", from, to);
+    return 0;
+}
+
+static int xmp_chmod(const char *path, mode_t mode){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+    
+    int res;
+
+    res = chmod(fpath, mode);
+    if (res == -1)
+        return -errno;
+
+    loglvlInfo("CHMOD", path);
+    return 0;
+}
+
+static int xmp_chown(const char *path, uid_t uid, gid_t gid){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+
+    res = lchown(fpath, uid, gid);
+    if (res == -1)
+        return -errno;
+
+    loglvlInfo("CHOWN", path);
+    return 0;
+}
+
+static int xmp_truncate(const char *path, off_t size){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+    res = truncate(fpath, size);
+    if (res == -1)
+        return -errno;
+    
+    loglvlInfo("TRUNCATE", path);
+    return 0;
+}
+
+static int xmp_utimens(const char *path, const struct timespec ts[2]){
+	char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+	struct timeval tv[2];
+
+	tv[0].tv_sec = ts[0].tv_sec;
+	tv[0].tv_usec = ts[0].tv_nsec / 1000;
+	tv[1].tv_sec = ts[1].tv_sec;
+	tv[1].tv_usec = ts[1].tv_nsec / 1000;
+
+	res = utimes(fpath, tv);
+	if (res == -1)
+		return -errno;
+
+    loglvlInfo("UTIMENS", path);
+	return 0;
+}
+
+static int xmp_open(const char *path, struct fuse_file_info *fi){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res;
+
+    res = open(fpath, fi->flags);
+    if (res == -1)
+        return -errno;
+
+    close(res);
+
+    loglvlInfo("OPEN", path);
+    return 0;
+}
+
+static int xmp_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi){
+	char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int fd;
+    int res;
+
+    (void) fi;
+    fd = open(fpath, O_WRONLY);
+    if (fd == -1)
+        return -errno;
+
+    res = pwrite(fd, buf, size, offset);
+    if (res == -1)
+        res = -errno;
+
+    close(fd);
+    loglvlInfo("WRITE", path);
+    return res;
+}
+
+static int xmp_statfs(const char *path, struct statvfs *stbuf){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+    
+    int res;
+
+    res = statvfs(fpath, stbuf);
+    if (res == -1)
+        return -errno;
+
+    loglvlInfo("STATFS", path);
+    return 0;
+}
+
+#ifdef HAVE_SETXATTR
+static int xmp_setxattr(const char *path, const char *name, const char *value, size_t size, int flags){
+	char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res = lsetxattr(fpath, name, value, size, flags);
+	if (res == -1)
+		return -errno;
+
+    loglvlInfo("SETXATTR", path);
+	return 0;
+}
+
+static int xmp_getxattr(const char *path, const char *name, char *value, size_t size){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+    
+    int res = lgetxattr(fpath, name, value, size);
+    if (res == -1)
+        return -errno;
+    
+    loglvlInfo("GETXATTR", path);
+    return res;
+}
+
+static int xmp_listxattr(const char *path, char *list, size_t size){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res = llistxattr(fpath, list, size);
+    if (res == -1)
+        return -errno;
+    
+    loglvlInfo("LISTXATTR", path);
+    return res;
+}
+
+static int xmp_removexattr(const char *path, const char *name){
+    char fpath[1000];
+    if(strcmp(path,"/") == 0){
+        path=dirpath;
+        sprintf(fpath,"%s",path);
+    } else{
+        sprintf(fpath, "%s%s",dirpath,path);
+    }
+
+    int res = lremovexattr(fpath, name);
+    if (res == -1)
+        return -errno;
+    
+    loglvlInfo("REMOVEXATTR", path);
+    return 0;
+}
+#endif /* HAVE_SETXATTR */
+
 static struct fuse_operations xmp_oper = {
     .getattr = xmp_getattr,
     .readdir = xmp_readdir,
@@ -297,60 +704,29 @@ static struct fuse_operations xmp_oper = {
     .rename = xmp_rename,
     .mkdir = xmp_mkdir,
     .create = xmp_create,
+    .readlink = xmp_readlink,
+    .mknod = xmp_mknod,
+    .symlink = xmp_symlink,
+    .unlink = xmp_unlink,
+    .rmdir = xmp_rmdir,
+    .link = xmp_link,
+    .chmod = xmp_chmod,
+    .chown = xmp_chown,
+    .truncate = xmp_truncate,
+    .utimens = xmp_utimens,
+    .open = xmp_open,
+    .write = xmp_write,
+    .statfs= xmp_statfs,
+#ifdef HAVE_SETXATTR
+    .setxattr       = xmp_setxattr,
+    .getxattr       = xmp_getxattr,
+    .listxattr      = xmp_listxattr,
+    .removexattr    = xmp_removexattr,
+#endif
 };
 
 int main(int argc, char *argv[]) {
   umask(0);
 
   return fuse_main(argc, argv, &xmp_oper, NULL);
-}
-
-void loglvlWarning(const char *log, const char *path){
-    FILE *fp;
-    fp = fopen("/home/yusuf/SinSeiFS.log", "a");
-    fputs("WARNING::", fp);
-    char timestamp[1000];
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(timestamp, "%02d%02d%02d-%02d:%02d:%02d:", (tm.tm_year + 1900)%100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    fputs(timestamp, fp);
-    fputs(log, fp);
-    fputs("::", fp);
-    fputs(path, fp);
-    fputs("\n", fp);
-    fclose(fp);
-}
-
-void loglvlInfo(const char *log, const char *path){
-    FILE *fp;
-    fp = fopen("/home/yusuf/SinSeiFS.log", "a");
-    fputs("INFO::", fp);
-    char timestamp[1000];
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(timestamp, "%02d%02d%02d-%02d:%02d:%02d:", (tm.tm_year + 1900)%100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    fputs(timestamp, fp);
-    fputs(log, fp);
-    fputs("::", fp);
-    fputs(path, fp);
-    fputs("\n", fp);
-    fclose(fp);
-}
-
-void loglvlInfo2(const char *log, const char *source, const char *destination){
-    FILE *fp;
-    fp = fopen("/home/yusuf/SinSeiFS.log", "a");
-    fputs("INFO::", fp);
-    char timestamp[1000];
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    sprintf(timestamp, "%02d%02d%02d-%02d:%02d:%02d:", (tm.tm_year + 1900)%100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    fputs(timestamp, fp);
-    fputs(log, fp);
-    fputs("::", fp);
-    fputs(source, fp);
-    fputs("::", fp);
-    fputs(destination, fp);
-    fputs("\n", fp);
-    fclose(fp);
 }
