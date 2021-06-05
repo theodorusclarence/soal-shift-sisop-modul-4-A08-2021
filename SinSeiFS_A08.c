@@ -690,6 +690,7 @@ static int xmp_unlink(const char *path) {
   loglvlWarning("UNLINK", path);
   return 0;
 }
+
 static struct fuse_operations xmp_oper = {
     .getattr = xmp_getattr,
     .readdir = xmp_readdir,
