@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-static const char *dirpath = "/home/user/Downloads";
+static const char *dirpath = "/home/clarence/Documents";
 
 void atbash(char str[1000], char newStr[1000]) {
   // Skip if directory
@@ -73,19 +73,17 @@ void rot13Enc(char str[1000], char newStr[1000]) {
 
     if (!((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97))) {
       if (str[i] >= 'A' && str[i] <= 'Z') {
-        if(str[i] + 13 > 'Z') {
-          newStr[i] = 'A' + (12 - ('Z' - str[i]));
-        }
-        else {
-          newStr[i] = str[i];
+        if (str[i] + 13 > 'Z') {
+          newStr[i] = str[i] - 13;
+        } else {
+          newStr[i] = str[i] + 13;
         }
       }
       if (str[i] >= 'a' && str[i] <= 'z') {
-        if(str[i] + 13 > 'z') {
-          newStr[i] = 'a' + (12 - ('z' - str[i]));
-        }
-        else {
-          newStr[i] = str[i];
+        if (str[i] + 13 > 'z') {
+          newStr[i] = str[i] - 13;
+        } else {
+          newStr[i] = str[i] + 13;
         }
       }
     }
@@ -121,19 +119,17 @@ void rot13Denc(char str[1000], char newStr[1000]) {
 
     if (!((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97))) {
       if (str[i] >= 'A' && str[i] <= 'Z') {
-        if(str[i] - 13 < 'A') {
-          newStr[i] = 'Z' - (12 - (str[i] - 'A'));
-        }
-        else {
-          newStr[i] = str[i];
+        if (str[i] - 13 < 'A') {
+          newStr[i] = str[i] + 13;
+        } else {
+          newStr[i] = str[i] - 13;
         }
       }
       if (str[i] >= 'a' && str[i] <= 'z') {
-        if(str[i] - 13 < 'a') {
-          newStr[i] = 'z' - (12 - (str[i] - 'a'));
-        }
-        else {
-          newStr[i] = str[i];
+        if (str[i] - 13 < 'a') {
+          newStr[i] = str[i] + 13;
+        } else {
+          newStr[i] = str[i] - 13;
         }
       }
     }
@@ -158,12 +154,11 @@ void vigen(char str[1000], char newStr[1000], bool encr) {
   int msgLen = strlen(str), keyLen = strlen(key), i, j;
   char newKey[msgLen];
 
-  //generating new key
-  for(i = 0,j = 0; i < msgLen; ++i, ++j){
-      if(j == keyLen)
-          j = 0;
+  // generating new key
+  for (i = 0, j = 0; i < msgLen; ++i, ++j) {
+    if (j == keyLen) j = 0;
 
-      newKey[i] = key[j];
+    newKey[i] = key[j];
   }
   newKey[i] = '\0';
 
@@ -182,50 +177,45 @@ void vigen(char str[1000], char newStr[1000], bool encr) {
       continue;
     }
 
-    if(encr) {
+    if (encr) {
       if (!((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97))) {
         if (str[i] >= 'A' && str[i] <= 'Z') {
-          if(newKey[i] >= 'a' && newKey[i] <= 'z') {
-              temp = newKey[i] - 'a' + 'A';
-              newStr[i] = ((str[i] + temp) % 26) + 'A';
-          }
-          else {
-              newStr[i] = ((str[i] + newKey[i]) % 26) + 'A';
+          if (newKey[i] >= 'a' && newKey[i] <= 'z') {
+            temp = newKey[i] - 'a' + 'A';
+            newStr[i] = ((str[i] + temp) % 26) + 'A';
+          } else {
+            newStr[i] = ((str[i] + newKey[i]) % 26) + 'A';
           }
         }
         if (str[i] >= 'a' && str[i] <= 'z') {
           temp = str[i] - 'a' + 'A';
-          if(newKey[i] >= 'a' && newKey[i] <= 'z') {
-              char tempNK = newKey[i] - 'a' + 'A';
-              newStr[i] = ((temp + tempNK) % 26) + 'A';
-          }
-          else {
-              newStr[i] = ((temp + newKey[i]) % 26) + 'A';
+          if (newKey[i] >= 'a' && newKey[i] <= 'z') {
+            char tempNK = newKey[i] - 'a' + 'A';
+            newStr[i] = ((temp + tempNK) % 26) + 'A';
+          } else {
+            newStr[i] = ((temp + newKey[i]) % 26) + 'A';
           }
           newStr[i] = newStr[i] - 'A' + 'a';
         }
       }
-    }
-    else {
+    } else {
       if ((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97)) {
         if (!((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97))) {
           if (str[i] >= 'A' && str[i] <= 'Z') {
-            if(newKey[i] >= 'a' && newKey[i] <= 'z') {
-                temp = newKey[i] - 'a' + 'A';
-                newStr[i] = (((str[i] + temp) + 26) % 26) + 'A';
-            }
-            else {
-                newStr[i] = (((str[i] + newKey[i]) + 26) % 26) + 'A';
+            if (newKey[i] >= 'a' && newKey[i] <= 'z') {
+              temp = newKey[i] - 'a' + 'A';
+              newStr[i] = (((str[i] + temp) + 26) % 26) + 'A';
+            } else {
+              newStr[i] = (((str[i] + newKey[i]) + 26) % 26) + 'A';
             }
           }
           if (str[i] >= 'a' && str[i] <= 'z') {
             temp = str[i] - 'a' + 'A';
-            if(newKey[i] >= 'a' && newKey[i] <= 'z') {
-                char tempNK = newKey[i] - 'a' + 'A';
-                newStr[i] = (((temp + tempNK) + 26) % 26) + 'A';
-            }
-            else {
-                newStr[i] = (((temp + newKey[i]) + 26) % 26) + 'A';
+            if (newKey[i] >= 'a' && newKey[i] <= 'z') {
+              char tempNK = newKey[i] - 'a' + 'A';
+              newStr[i] = (((temp + tempNK) + 26) % 26) + 'A';
+            } else {
+              newStr[i] = (((temp + newKey[i]) + 26) % 26) + 'A';
             }
             newStr[i] = newStr[i] - 'A' + 'a';
           }
@@ -267,8 +257,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf) {
     // TODO Check if prefixed with atoz_
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = 1;
-    }
-    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+    } else if (strncmp(token, "RX_", 3) == 0) {
       hasToEncrypt = 2;
     }
     token = strtok(NULL, "/");
@@ -281,11 +270,13 @@ static int xmp_getattr(const char *path, struct stat *stbuf) {
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
   } else if (hasToEncrypt == 2) {
     rot13Denc(pathEnc, decrypted2);
-    atbash(decrypted2, decrypted)
+    atbash(decrypted2, decrypted);
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
   } else {
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, pathEnc);
   }
+
+  printf("fpathToSend: %s", fpathToSend);
 
   res = lstat(fpathToSend, stbuf);
   if (res == -1) return -errno;
@@ -314,8 +305,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // TODO Check if prefixed with atoz_
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = 1;
-    }
-    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+    } else if (strncmp(token, "RX_", 3) == 0) {
       hasToEncrypt = 2;
     }
     // printf("token: %s\n", token);
@@ -326,7 +316,14 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     path = dirpath;
     sprintf(fpath, "%s", path);
   } else {
-    sprintf(fpath, "%s%s", dirpath, path);
+    char pathDec[1000], pathDec2[1000];
+    if (hasToEncrypt == 1) {
+      atbash(pathEnc, pathDec);
+    } else if (hasToEncrypt == 2) {
+      rot13Denc(pathEnc, pathDec2);
+      atbash(pathDec2, pathDec);
+    }
+    sprintf(fpath, "%s%s%s", dirpath, path, pathDec);
   }
 
   int res = 0;
@@ -335,6 +332,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   struct dirent *de;
   (void)offset;
   (void)fi;
+  printf("temp send: %s\n", fpath);
 
   dp = opendir(fpath);
 
@@ -353,13 +351,14 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
     if (hasToEncrypt == 1) {
       atbash(de->d_name, temp);
-    } 
-    else if (hasToEncrypt == 2) {
+    } else if (hasToEncrypt == 2) {
       atbash(de->d_name, temp2);
       rot13Enc(temp2, temp);
-    }else {
+    } else {
       strcpy(temp, de->d_name);
     }
+
+    printf("temp send: %s\n", temp);
 
     res = (filler(buf, temp, &st, 0));
 
@@ -398,11 +397,10 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
     // TODO Check if prefixed with atoz_
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = 1;
-    }
-    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+    } else if (strncmp(token, "RX_", 3) == 0) {
       hasToEncrypt = 2;
     }
-    else if(strcmp(token, ""))
+
     token = strtok(NULL, "/");
   }
 
@@ -418,6 +416,8 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
   } else {
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, pathEnc);
   }
+
+  printf("fpathToSend: %s\n", fpathToSend);
 
   int res = 0;
   int fd = 0;
@@ -462,44 +462,43 @@ static int xmp_rename(const char *from, const char *to) {
   if (res == -1) return -errno;
 
   // createLogInfo2("RENAME", from, to);
-  bool en1 = false, en2 = false, en3 = false, en4 = false;
-  char* token = strtok(from, "/");
-  while(token != NULL) {
-    if (strncmp(token, "AtoZ_", 5) == 0) {
-      en1 = true;
-      break;
-    }
-    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
-      en2 = true;
-      break;
-    }
-    token = strtok(NULL, "/");
-  }
+  // bool en1 = false, en2 = false, en3 = false, en4 = false;
+  // char *token = strtok(from, "/");
+  // while (token != NULL) {
+  //   if (strncmp(token, "AtoZ_", 5) == 0) {
+  //     en1 = true;
+  //     break;
+  //   } else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+  //     en2 = true;
+  //     break;
+  //   }
+  //   token = strtok(NULL, "/");
+  // }
 
-  char* token1 = strtok(to, "/");
-  while(token1 != NULL) {
-    if (hasToEncrypt == 1) {
-      en3 = true;
-      break;
-    } else if (hasToEncrypt == 2) {
-      en4 = true;
-      break;
-    } 
-    token1 = strtok(NULL, "/");
-  }
+  // char *token1 = strtok(to, "/");
+  // while (token1 != NULL) {
+  //   if (hasToEncrypt == 1) {
+  //     en3 = true;
+  //     break;
+  //   } else if (hasToEncrypt == 2) {
+  //     en4 = true;
+  //     break;
+  //   }
+  //   token1 = strtok(NULL, "/");
+  // }
 
-  char fpathToSend[2000], decrypted[1000], decrypted2[1000];
-  if(!en1 && en3) {
-      createLogInfo2("ENCRYPT1", from, to);
-  } else if(en1 && !en3) {
-      createLogInfo2("DECRYPT1", from, to);
-  } else if(!en2 && en4) {
-      createLogInfo2("ENCRYPT2", from, to);
-      initEncrypt2(fpathTo);
-  } else if(en2 && !en4) {
-      createLogInfo2("DECRYPT2", from, to);
-      initDecrypt2(fpathTo);
-  }
+  // char fpathToSend[2000], decrypted[1000], decrypted2[1000];
+  // if (!en1 && en3) {
+  //   createLogInfo2("ENCRYPT1", from, to);
+  // } else if (en1 && !en3) {
+  //   createLogInfo2("DECRYPT1", from, to);
+  // } else if (!en2 && en4) {
+  //   createLogInfo2("ENCRYPT2", from, to);
+  //   initEncrypt2(fpathTo);
+  // } else if (en2 && !en4) {
+  //   createLogInfo2("DECRYPT2", from, to);
+  //   initDecrypt2(fpathTo);
+  // }
 
   return 0;
 }
