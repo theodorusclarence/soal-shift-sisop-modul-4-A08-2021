@@ -275,9 +275,13 @@ static int xmp_getattr(const char *path, struct stat *stbuf) {
   }
 
   // TODO Send decrypted path, jadi ga bingung si attrnya
-  char fpathToSend[2000], decrypted[1000];
+  char fpathToSend[2000], decrypted[1000], decrypted2[1000];
   if (hasToEncrypt) {
     atbash(pathEnc, decrypted);
+    sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
+  } else if () {
+    rot13Denc(pathEnc, decrypted2);
+    atbash(decrypted2, decrypted)
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
   } else {
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, pathEnc);
@@ -311,6 +315,9 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = 1;
     }
+    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+      hasToEncrypt = 2;
+    }
     printf("token: %s\n", token);
     token = strtok(NULL, "/");
   }
@@ -342,11 +349,15 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     st.st_mode = de->d_type << 12;
 
     // Create variable for new name
-    char temp[1000];
+    char temp[1000], temp2[1000];
 
-    if (hasToEncrypt) {
+    if (hasToEncrypt == 1) {
       atbash(de->d_name, temp);
-    } else {
+    } 
+    else if (hasToEncrypt == 2) {
+      atbash(de->d_name, temp2);
+      rot13Denc(temp2, temp);
+    }else {
       strcpy(temp, de->d_name);
     }
 
@@ -388,15 +399,22 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = 1;
     }
+    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+      hasToEncrypt = 2;
+    }
     else if(strcmp(token, ""))
     token = strtok(NULL, "/");
   }
 
   // TODO Send decrypted path, jadi ga bingung si attrnya
-  char fpathToSend[2000], decrypted[1000];
-  if (hasToEncrypt) {
+  char fpathToSend[2000], decrypted[1000], decrypted2[1000];
+  if (hasToEncrypt == 1) {
     atbash(pathEnc, decrypted);
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted);
+  } else if (hasToEncrypt == 2) {
+    rot13Denc(pathEnc, decrypted);
+    atbash(decrypted, decrypted2);
+    sprintf(fpathToSend, "%s%s%s", dirpath, currPath, decrypted2);
   } else {
     sprintf(fpathToSend, "%s%s%s", dirpath, currPath, pathEnc);
   }
@@ -440,7 +458,48 @@ static int xmp_rename(const char *from, const char *to) {
   int res;
 
   res = rename(fpathFrom, fpathTo);
+
   if (res == -1) return -errno;
+
+  // createLogInfo2("RENAME", from, to);
+  bool en1 = false, en2 = false, en3 = false, en4 = false;
+  char* token = strtok(from, "/");
+  while(token != NULL) {
+    if (strncmp(token, "AtoZ_", 5) == 0) {
+      en1 = true;
+      break;
+    }
+    else if (strncmp(token, "RX_[Nama]", 9) == 0) {
+      en2 = true;
+      break;
+    }
+    token = strtok(NULL, "/");
+  }
+
+  char* token1 = strtok(to, "/");
+  while(token1 != NULL) {
+    if (hasToEncrypt == 1) {
+      en3 = true;
+      break;
+    } else if (hasToEncrypt == 2) {
+      en4 = true;
+      break;
+    } 
+    token1 = strtok(NULL, "/");
+  }
+
+  char fpathToSend[2000], decrypted[1000], decrypted2[1000];
+  if(!en1 && en3) {
+      createLogInfo2("ENCRYPT1", from, to);
+  } else if(en1 && !en3) {
+      createLogInfo2("DECRYPT1", from, to);
+  } else if(!en2 && en4) {
+      createLogInfo2("ENCRYPT2", from, to);
+      initEncrypt2(fpathTo);
+  } else if(en2 && !en4) {
+      createLogInfo2("DECRYPT2", from, to);
+      initDecrypt2(fpathTo);
+  }
 
   return 0;
 }
