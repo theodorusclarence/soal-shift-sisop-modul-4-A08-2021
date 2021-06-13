@@ -374,11 +374,14 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     char pathDec[1000], pathDec2[1000];
     if (hasToEncrypt == 1) {
       atbash(pathEnc, pathDec);
+      sprintf(fpath, "%s%s%s", dirpath, path, pathDec);
     } else if (hasToEncrypt == 2) {
       rot13Denc(pathEnc, pathDec2);
       atbash(pathDec2, pathDec);
+      sprintf(fpath, "%s%s%s", dirpath, path, pathDec);
+    } else {
+      sprintf(fpath, "%s%s", dirpath, path);
     }
-    sprintf(fpath, "%s%s%s", dirpath, path, pathDec);
   }
 
   int res = 0;
