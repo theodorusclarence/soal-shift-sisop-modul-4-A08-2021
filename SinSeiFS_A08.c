@@ -360,10 +360,11 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     // TODO Check if prefixed with atoz_
     if (strncmp(token, "AtoZ_", 5) == 0) {
       hasToEncrypt = 1;
-    } else if (strncmp(token, "RX_", 3) == 0) {
+    }
+    // TODO Check if prefixed with RX_ 
+    else if (strncmp(token, "RX_", 3) == 0) {
       hasToEncrypt = 2;
     }
-    // printf("token: %s\n", token);
     token = strtok(NULL, "/");
   }
 

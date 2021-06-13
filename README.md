@@ -253,3 +253,165 @@ Fungsi log akan dijelaskan lebih lanjut pada nomor 4
 Pencatatan mkdir
 ![](https://i.imgur.com/XYzmimh.png)
 Pencatatan rename
+
+# Soal 2
+Pada soal ini kita memiliki beberapa macam fungsi encode
+## Soal 2 a,b,c
+### a
+Jika sebuah direktori dibuat dengan awalan `RX_[Nama]`, maka direktori tersebut akan menjadi direktori terencode beserta isinya dengan perubahan nama isi sesuai kasus nomor 1 dengan algoritma tambahan ROT13 (Atbash + ROT13). Fungsi encode dari ROT13 berbeda dengan fungsi deencode sehingga harus membuat fungsi yang terpisah. Oleh karena itu yang harus pertama dilakukan adalah membuat fungsi encode dan deencode dari ROT13
+
+```c
+void rot13Enc(char str[1000], char newStr[1000]) {
+  // Skip if directory
+  if (!strcmp(str, ".") || !strcmp(str, "..")) {
+    strcpy(newStr, str);
+    return;
+  };
+
+  int i, flag = 0;
+  i = 0;
+  while (str[i] != '\0') {
+    // exclude extension
+    if (str[i] == '.') {
+      flag = 1;
+    }
+    if (flag == 1) {
+      newStr[i] = str[i];
+      i++;
+      continue;
+    }
+
+    if (!((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97))) {
+      if (str[i] >= 'A' && str[i] <= 'Z') {
+        if (str[i] + 13 > 'Z') {
+          newStr[i] = str[i] - 13;
+        } else {
+          newStr[i] = str[i] + 13;
+        }
+      }
+      if (str[i] >= 'a' && str[i] <= 'z') {
+        if (str[i] + 13 > 'z') {
+          newStr[i] = str[i] - 13;
+        } else {
+          newStr[i] = str[i] + 13;
+        }
+      }
+    }
+
+    if ((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97)) {
+      newStr[i] = str[i];
+    }
+
+    i++;
+  }
+  newStr[i] = '\0';
+}
+
+void rot13Denc(char str[1000], char newStr[1000]) {
+  // Skip if directory
+  if (!strcmp(str, ".") || !strcmp(str, "..")) {
+    strcpy(newStr, str);
+    return;
+  };
+
+  int i, flag = 0;
+  i = 0;
+  while (str[i] != '\0') {
+    // exclude extension
+    if (str[i] == '.') {
+      flag = 1;
+    }
+    if (flag == 1) {
+      newStr[i] = str[i];
+      i++;
+      continue;
+    }
+
+    if (!((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97))) {
+      if (str[i] >= 'A' && str[i] <= 'Z') {
+        if (str[i] - 13 < 'A') {
+          newStr[i] = str[i] + 13;
+        } else {
+          newStr[i] = str[i] - 13;
+        }
+      }
+      if (str[i] >= 'a' && str[i] <= 'z') {
+        if (str[i] - 13 < 'a') {
+          newStr[i] = str[i] + 13;
+        } else {
+          newStr[i] = str[i] - 13;
+        }
+      }
+    }
+
+    if ((str[i] >= 0 && str[i] < 65) || (str[i] > 90 && str[i] < 97)) {
+      newStr[i] = str[i];
+    }
+
+    i++;
+  }
+  newStr[i] = '\0';
+}
+```
+
+Kemudian, dari fungsi di atas yang bertugas untuk menambah ASCII char sebanyak 13 (kalau melebihi batas, diulang dari awal), maka kita harus menentukan apakah folder tersebut harus kita encode dengan menggunakan `strncmp(token, "RX_", 5) == 0`
+Pengecekan di atas dilakukan pada fungsi `xmp_readdir` sehingga kita bisa mengubah nama yang ditampilkan pada file system fuse. Penjelasan detail mengenai `xmp_readdir` sudah dipaparkan di nomor 1. Di sini hanya bagaimana enconde/deencode terkait dipanggil.
+
+```c
+char *token = strtok(path, "/");
+while (token != NULL) {
+  ...
+  // TODO Check if prefixed with RX_ 
+  else if (strncmp(token, "RX_", 3) == 0) {
+    hasToEncrypt = 2;
+  }
+  ...
+  } else if (hasToEncrypt == 2) {
+    rot13Denc(pathEnc, pathDec2);
+    atbash(pathDec2, pathDec);
+    sprintf(fpath, "%s%s%s", dirpath, path, pathDec);
+  } else {
+    sprintf(fpath, "%s%s", dirpath, path);
+  }
+}
+
+...
+
+while ((de = readdir(dp)) != NULL) {
+  ...
+  } else if (hasToEncrypt == 2) {
+    atbash(de->d_name, temp2);
+    rot13Enc(temp2, temp);
+  } else {
+    strcpy(temp, de->d_name);
+  }
+
+  printf("temp send: %s\n", temp);
+
+  res = (filler(buf, temp, &st, 0));
+
+  if (res != 0) break;
+}
+...
+```
+
+## Soal 2d
+Setiap pembuatan direktori ter-encode (mkdir atau rename) akan tercatat ke sebuah log. Format : /home/[USER]/Downloads/[Nama Direktori] → /home/[USER]/Downloads/RX_[Nama Direktori]
+
+Pencatatan dilakukan pada xmp_mkdir dan xmp_rename yaitu dengan fungsi
+
+loglvlInfo("MKDIR", path);
+
+loglvlInfo2("RENAME", fpathFrom, fpathTo);
+Fungsi log akan dijelaskan lebih lanjut pada nomor 4
+
+## Kendala
+#### 1
+Pada soal 2b disebutkan bahwa:
+<p>Jika sebuah direktori di-rename dengan awalan “RX_[Nama]”, maka direktori tersebut akan menjadi direktori terencode beserta isinya dengan perubahan nama isi sesuai dengan kasus nomor 1 dengan algoritma tambahan Vigenere Cipher dengan key “SISOP” (Case-sensitive, Atbash + Vigenere).</p>
+Namun pada praktikum ini kami masih belum bisa mengetahui apakah suatu direktori adalah telah dilakukan rename atau tidak. Penentuan tersebut berkaitan dengan fungsi encode apa yang akan diberlakukan.
+
+#### 2
+Kami masih belum bisa memecah file-file di direktori asli menjadi file-file kecil sebesar 1024 bytes, sementara jika diakses melalui filesystem rancangan Sin dan Sei akan menjadi normal. 
+
+
