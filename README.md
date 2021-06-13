@@ -405,6 +405,107 @@ loglvlInfo("MKDIR", path);
 loglvlInfo2("RENAME", fpathFrom, fpathTo);
 Fungsi log akan dijelaskan lebih lanjut pada nomor 4
 
+# Soal 4
+
+Dalam membuat log dari segala aktifitas berlangsung , maka bentuk log akan diatur dengan 2 format yaitu INFO dan WARNING. Command yang termasuk dalam log level WARNING yaitu `rmdir` dan `unlink` sedangkan yang lainnya termasuk log level INFO.
+
+### Log Level WARNING
+Dalam penulisan log WARNING , yaitu dengan membuat fungsi `loglvlWarning` sehingga untuk melakukan pemanggilan fungsi akan lebih mudah apabila dibuat terpisah antara INFO dan WARNING. 
+
+Pada fungsi ini kita melakukan inisialisasi `fp` sebagai FILE yang dimana sebagai tempat untuk melakukan store log tersebut. Untuk log akan distore ke fp memiliki Command tersebut bertujuan untuk destinasi log yang akan dibuat.
+```
+void loglvlWarning(const char *log, const char *path) {
+  FILE *fp;
+  fp = fopen("/home/clarence/SinSeiFS.log", "a");
+  fputs("WARNING::", fp);
+```
+Untuk format penulisan log WARNING, `WARNING::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC]`. Untuk melakukan format tersebut maka kita harus menginisialisasi ke variable dengan command. Sehingga format tanggal dan timestamp didapat dari `struct tm tm = *localtime(&t)` dan hasil format kita store `char timestamp[1000]`
+ ```
+ char timestamp[1000];
+ time_t t = time(NULL);
+ struct tm tm = *localtime(&t);
+ sprintf(timestamp, "%02d%02d%04d-%02d:%02d:%02d:", tm.tm_mday, tm.tm_mon + 1,
+          tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
+ ``` 
+ pada format year menggunakan `tm.tm_year + 1900` yagn bertujuan untuk menghasilkan tahun `2021` karena format yang didapat dari `localtime` berupa `0121` sehingga harus ditambah `1900` agar tahun dapat sesuai dengan formatnya.
+
+ Kemudian variable timestamp tersebut di puts di log tersebut dengan ditambah `log` yang sebelum nya sudah di store dari fungsi lain yang dimana `log` tersebut berisi jenis command /`[CMD]` yang dilakukan. kemudian diakhiri dengan `path` yang juga sudah di store dari fungsi lain , berisi alamat dari file tersebut.
+ ```
+  fputs(timestamp, fp);
+  fputs(log, fp);
+  fputs("::", fp);
+  fputs(path, fp);
+ ```
+contoh dari fungsi lain yang menggunakan `loglvlwarning` yaitu `xmp_rmdir` yaitu dengan cara sebagai berikut
+```
+static int xmp_rmdir(const char *path){
+  ...
+  
+  loglvlWarning("RMDIR", path);
+}
+```
+Dengan alur sebagai berikut maka log dari command `rmdir` akan distore ke `SinSeiFS.log`. Hasil dari log level warning  dapat dilihat sebagai berikut:
+
+![](https://i.imgur.com/RjM7aK2.png)
+
+### Log Level INFO
+ Pada penulisan log INFO ini , yaitu untuk mempermudah disaat memanggil fungsi maka membagi menjadi 2 fungsi yaitu `loglvlInfo` dan `loglvlInfo2`. Prinsip dari log INFO sama dengan prinsip yang dimiliki fungsi log WARNING, yang menjadi pembedanya yaitu dari format dalam melakukan penulisan log
+
+ #### loglvlInfo
+ Pada `loglvlinfo` hanya berbeda pada `INFO::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC]` maka command yang diganti yaitu
+ ```
+ void loglvlInfo(const char *log, const char *path) {
+   ...
+
+   fputs("INFO::", fp);
+  }
+ ```
+contoh dari penerapan `loglvlinfo` yaitu pada command `xmp_readdir` yaitu dengan cara memanggil fungsi tersebut di akhir fungsi 
+```
+static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,off_t offset, struct fuse_file_info *fi){
+...
+                        
+loglvlInfo("READDIR", path);
+}
+```
+sehingga dengan cara berikut log dari `readdir` akan masuk ke `SinSeiFs.log`. Hasil dari penulisan `loglvlinfo` dapat dilihat sebagai berikut:
+
+![](https://i.imgur.com/qHhUqJZ.png)
+
+### loglvlInfo2
+Sedangkan untuk fungsi ini yang menjadi pembeda yaitu dari variabel yang dipassing ke fungsi ini. sehingga bukannya hanya `path` merupakan alamat yang dipassing ke fungsi , `fpathto` juga dipassing yang dimana berisi destination. sehingga pada format log menjadi 
+
+`INFO::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC :: DESC]` 
+
+yang dimana source dan destination dari fungsi yang terkait ditulis pada log tersebut. perubahan pada fungsi `loglvlInfo2` yaitu
+```
+void loglvlInfo2(const char *log, const char *source, const char *destination){
+...
+
+fputs(log, fp);
+fputs("::", fp);
+fputs(source, fp);
+fputs("::", fp);
+fputs(destination, fp);
+
+...
+}
+```
+contoh penerapan `loglvlInfo2' yaitu pada fungsi `xmp_rename` yang dimana harus memanggil fugnsi ini
+```
+static int xmp_rename(const char *from, const char *to) {
+  ...
+
+  loglvlInfo2("RENAME", fpathFrom, fpathTo);
+
+  ...
+```
+Sehingga log dari `xmp_rename` akan di tulis pada `SinSeiFs.log`. Hasil dari penulisan log dapat dilihat sebagai berikut:
+
+![](https://i.imgur.com/D1ivSEQ.png)
+
+Dengan metode yang sudah dijelaskan maka penulisan log pada `SinSeiFS.log` akan terstruktur dengan baik
+
 ## Kendala
 #### 1
 Pada soal 2b disebutkan bahwa:
